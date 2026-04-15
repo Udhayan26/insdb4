@@ -193,4 +193,82 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Book</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@endsection
+
+@push('scripts')
+<script>
+// Series Distribution Chart
+const seriesCtx = document.getElementById('seriesChart').getContext('2d');
+new Chart(seriesCtx, {
+    type: 'bar',
+    data: {
+        labels: {!! json_encode($series_distribution->pluck('code')) !!},
+        datasets: [{
+            label: 'Number of Books',
+            data: {!! json_encode($series_distribution->pluck('books_count')) !!},
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+
+// Citation Types Chart
+const citationCtx = document.getElementById('citationChart').getContext('2d');
+new Chart(citationCtx, {
+    type: 'pie',
+    data: {
+        labels: {!! json_encode($citation_stats->pluck('citation_type')) !!},
+        datasets: [{
+            data: {!! json_encode($citation_stats->pluck('count')) !!},
+            backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+        }]
+    }
+});
+
+// Add Book Form Submission
+$('#addBookForm').on('submit', function(e) {
+    e.preventDefault();
+    $.ajax({
+        url: '{{ route("admin.books.store") }}',
+        method: 'POST',
+        data: $(this).serialize(),
+        success: function(response) {
+            if(response.success) {
+                location.reload();
+            }
+        },
+        error: function(xhr) {
+            alert('Error: ' + xhr.responseJSON.message);
+        }
+    });
+});
+
+function publishBook(bookId) {
+    if(confirm('Publish this book?')) {
+        $.ajax({
+            url: '/admin/books/' + bookId + '/publish',
+            method: 'POST',
+            success: function() {
+                location.reload();
+            }
+        });
+    }
+}
+</script>
+@endpush
