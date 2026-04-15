@@ -1,35 +1,26 @@
-name: Deploy to Production
-
+name: Build and Deploy
 on:
   push:
     branches: [ main ]
-
 jobs:
-  deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
-    
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
         php-version: '8.2'
-        
-    - name: Install Dependencies
-      run: composer install --no-dev --optimize-autoloader
-      
-    - name: Deploy to Server
-      uses: appleboy/ssh-action@v0.1.5
-      with:
-        host: ${{ secrets.DEPLOY_HOST }}
-        username: ${{ secrets.DEPLOY_USER }}
-        key: ${{ secrets.DEPLOY_KEY }}
-        script: |
-          cd /var/www/indian-inscriptions
-          git pull origin main
-          composer install --no-dev
-          php artisan migrate --force
-          php artisan config:cache
-          php artisan route:cache
-          php artisan view:cache
-          sudo systemctl reload nginx
+    - name: Validate composer.json
+      run: composer validate
+    - name: Install dependencies
+      run: composer install --no-progress --no-suggest
+    - name: Create .env file
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+    - name: Run Laravel
+      run: |
+        php artisan config:cache
+        php artisan route:cache
+        php artisan view:cache
